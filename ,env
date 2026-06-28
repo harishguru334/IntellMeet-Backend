@@ -1,0 +1,3 @@
+MONGO_URI=mongodb://mongo:osPFjnOWcIVOkaEWPwLuMQjmHQxYWsEd@reseau.proxy.rlwy.net:44349/Intellmeet 
+PORT=8000
+JWT_SECRET=intellmeet_super_secret_2024
