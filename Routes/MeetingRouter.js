@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
 
+
 const { protect } = require("../middleware/authMiddleware");
 
-const { createMeeting, getMyMeetings, getMeetingById, } = require("../Controllers/MeetingController");
+const { createMeeting, getMyMeetings, getMeetingById, saveMeetingSummary, } = require("../Controllers/MeetingController");
 
 // Create Meeting
 router.post("/create", protect, createMeeting);
@@ -12,7 +13,11 @@ router.post("/create", protect, createMeeting);
 router.get("/my", protect, getMyMeetings);
 
 // Get Single Meeting
+
 router.get("/:id", protect, getMeetingById);
+
+
+router.put("/:id/summary", protect, saveMeetingSummary);
 
 
 

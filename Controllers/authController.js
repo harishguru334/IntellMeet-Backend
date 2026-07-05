@@ -12,7 +12,7 @@ const generateToken = (userId) => {
 // @POST /api/auth/signup
 const signup = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
     // Already exists check
     const existingUser = await User.findOne({ email });
@@ -28,7 +28,7 @@ const signup = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: role || "user",
+      role:  "user",
     });
 
     const token = generateToken(user._id);

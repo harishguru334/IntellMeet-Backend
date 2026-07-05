@@ -2,16 +2,17 @@ const mongoose = require("mongoose");
 
 const meetingSchema = new mongoose.Schema(
   {
-    title: { type: String, require: true },
-    host: { type: mongoose.Schema.Types.ObjectId, ref: "User", require: true },
+    title: { type: String, required: true },
+    host: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    meetingCode: { type: String, require: true, Unique: true },
+    meetingCode: { type: String, required: true, unique: true },
     status: {
       type: String,
       enum: ["scheduled", "active", "ended"],
-      default: "Scheduled",
+      default: "scheduled",
     },
-    summry: { type: String, default: "" },
+    summary: { type: String, default: "" },
+    keyPoints: [{ type: String }],
     actionItems: [
       {
         task: String,

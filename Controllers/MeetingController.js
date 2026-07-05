@@ -1,5 +1,6 @@
 const Meeting = require("../Models/MeetingModels");
-const { v4: uuidv4 } = require('uuid')
+const { v4: uuidv4 } = require("uuid");
+const redis = require("../Config/redis");
 
 // Create Meeting
 const createMeeting = async (req, res) => {
@@ -10,18 +11,35 @@ const createMeeting = async (req, res) => {
       meetingCode: uuidv4().slice(0, 8).toUpperCase(),
     });
 
+    // ✅ Cache invalidate karo — new meeting bani
+    await redis.del(`meetings:${req.user._id}`);
+
     res.status(201).json(meeting);
   } catch (err) {
+    console.error("Meeting create error:", err);
     res.status(500).json({ message: err.message });
   }
 };
 
-// Get My Meetings
+// Get My Meetings — Cache ke saath
 const getMyMeetings = async (req, res) => {
   try {
+    const cacheKey = `meetings:${req.user._id}`;
+
+    // ✅ Pehle Redis check karo
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      console.log("✅ Cache hit — meetings");
+      return res.json(JSON.parse(cached));
+    }
+
+    // MongoDB se fetch karo
     const meetings = await Meeting.find({
       host: req.user._id,
     }).sort({ createdAt: -1 });
+
+    // ✅ Redis mein save karo — 5 min ke liye
+    await redis.set(cacheKey, JSON.stringify(meetings), "EX", 300);
 
     res.status(200).json(meetings);
   } catch (err) {
@@ -29,16 +47,23 @@ const getMyMeetings = async (req, res) => {
   }
 };
 
-// Get Single Meeting
+
 const getMeetingById = async (req, res) => {
   try {
-    const meeting = await Meeting.findById(req.params.id);
+    const cacheKey = `meeting:${req.params.id}`;
 
-    if (!meeting) {
-      return res.status(404).json({
-        message: "Meeting not found",
-      });
+    
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      console.log("✅ Cache hit — single meeting");
+      return res.json(JSON.parse(cached));
     }
+
+    const meeting = await Meeting.findById(req.params.id);
+    if (!meeting) return res.status(404).json({ message: "Meeting not found" });
+
+    // ✅ Cache karo — 10 min
+    await redis.set(cacheKey, JSON.stringify(meeting), "EX", 600);
 
     res.status(200).json(meeting);
   } catch (err) {
@@ -46,4 +71,31 @@ const getMeetingById = async (req, res) => {
   }
 };
 
-module.exports = { createMeeting, getMyMeetings, getMeetingById, };
+// Save Summary — Cache invalidate karo
+const saveMeetingSummary = async (req, res) => {
+  try {
+    const { summary, keyPoints, actionItems, transcript } = req.body;
+
+    const meeting = await Meeting.findByIdAndUpdate(
+      req.params.id,
+      { summary, transcript, actionItems: actionItems.map(item => ({
+        task: item.task,
+        assignee: item.assignee,
+        done: false
+      }))},
+      { new: true }
+    );
+
+    if (!meeting) return res.status(404).json({ message: "Meeting not found" });
+
+    // ✅ Cache invalidate karo
+    await redis.del(`meeting:${req.params.id}`);
+    await redis.del(`meetings:${req.user._id}`);
+
+    res.json(meeting);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { createMeeting, getMyMeetings, getMeetingById, saveMeetingSummary };
