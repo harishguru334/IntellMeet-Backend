@@ -4,7 +4,7 @@ const { signup, login, getMe } = require("../Controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
 const passport = require("passport");
 const jwt = require("jsonwebtoken")
-const passportr = require("../config/passport");   
+const passportr = require("../Config/passport");   
 
 router.get(
   "/google",
