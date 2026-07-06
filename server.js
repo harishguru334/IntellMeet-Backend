@@ -45,14 +45,14 @@ io.on("connection", (socket) => {
     console.log(`${userName} joined meeting ${meetingId}`);
   });
   
-  socket.on("send-message", ({ meetingId, message, userName }) => {
-    io.to(meetingId).emit("receive-message", {
+ socket.on("send-message", ({ meetingId, message, userName }) => {
+    
+    socket.to(meetingId).emit("receive-message", {
       message,
       userName,
       time: new Date().toLocaleTimeString(),
     });
-  });
-  
+  }); 
   socket.on("webrtc-offer", ({ offer, to }) => {
     socket.to(to).emit("webrtc-offer", { offer, from: socket.id });
   });
