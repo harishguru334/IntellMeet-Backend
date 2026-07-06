@@ -48,6 +48,21 @@ const getMyMeetings = async (req, res) => {
 };
 
 
+// Join Meeting by Code — Zoom jaise "Meeting Code" se join
+const getMeetingByCode = async (req, res) => {
+  try {
+    const code = req.params.code?.trim().toUpperCase();
+    if (!code) return res.status(400).json({ message: "Meeting code required" });
+
+    const meeting = await Meeting.findOne({ meetingCode: code });
+    if (!meeting) return res.status(404).json({ message: "Invalid meeting code" });
+
+    res.status(200).json(meeting);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 const getMeetingById = async (req, res) => {
   try {
     const cacheKey = `meeting:${req.params.id}`;
@@ -98,4 +113,4 @@ const saveMeetingSummary = async (req, res) => {
   }
 };
 
-module.exports = { createMeeting, getMyMeetings, getMeetingById, saveMeetingSummary };
+module.exports = { createMeeting, getMyMeetings, getMeetingById, getMeetingByCode, saveMeetingSummary };
