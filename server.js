@@ -29,6 +29,10 @@ const io = new Server(httpServer, {
 
 connectDB();
 
+// In-memory list of who's currently connected to each meeting room —
+// used to show the live "Participants" list on the frontend.
+const roomUsers = {};
+
 app.use(cors({
   origin: process.env.FRONTEND_URL ||  "http://localhost:5173",
   credentials: true,
@@ -39,20 +43,30 @@ app.use(express.json());
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
   
-  socket.on("join-meeting", ({ meetingId, userName }) => {
+  socket.on("join-meeting", ({ meetingId, userName, userId }) => {
     socket.join(meetingId);
+    socket.data.meetingId = meetingId;
+    socket.data.userName = userName;
+    socket.data.userId = userId;
+
+    if (!roomUsers[meetingId]) roomUsers[meetingId] = {};
+    roomUsers[meetingId][socket.id] = { userName, userId };
+
     socket.to(meetingId).emit("user-joined", { userName, socketId: socket.id });
+    io.to(meetingId).emit("room-users", Object.values(roomUsers[meetingId]));
     console.log(`${userName} joined meeting ${meetingId}`);
   });
   
- socket.on("send-message", ({ meetingId, message, userName }) => {
-    
+  socket.on("send-message", ({ meetingId, message, userName }) => {
+    // socket.to() excludes the sender — sender already shows their own
+    // message locally, so broadcasting back to them causes duplicates.
     socket.to(meetingId).emit("receive-message", {
       message,
       userName,
       time: new Date().toLocaleTimeString(),
     });
-  }); 
+  });
+  
   socket.on("webrtc-offer", ({ offer, to }) => {
     socket.to(to).emit("webrtc-offer", { offer, from: socket.id });
   });
@@ -66,11 +80,25 @@ io.on("connection", (socket) => {
   });
   
   socket.on("broadcast-peer-id", ({ meetingId, peerId, userName }) => {
+    socket.data.peerId = peerId;
     socket.to(meetingId).emit("user-peer-id", { peerId, userName });
   });
   
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
+    const { meetingId, peerId, userName } = socket.data;
+    // Let everyone else in the room know this participant left, so their
+    // video tile can be removed instead of staying stuck on screen.
+    if (meetingId && peerId) {
+      socket.to(meetingId).emit("user-left", { peerId, userName });
+    }
+    if (meetingId && roomUsers[meetingId]) {
+      delete roomUsers[meetingId][socket.id];
+      io.to(meetingId).emit("room-users", Object.values(roomUsers[meetingId]));
+      if (Object.keys(roomUsers[meetingId]).length === 0) {
+        delete roomUsers[meetingId];
+      }
+    }
   });
 });
 
