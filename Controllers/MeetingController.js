@@ -93,7 +93,7 @@ const saveMeetingSummary = async (req, res) => {
 
     const meeting = await Meeting.findByIdAndUpdate(
       req.params.id,
-      { summary, transcript, actionItems: actionItems.map(item => ({
+      { summary, transcript, keyPoints: keyPoints || [], actionItems: (actionItems || []).map(item => ({
         task: item.task,
         assignee: item.assignee,
         done: false

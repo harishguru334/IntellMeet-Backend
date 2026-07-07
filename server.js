@@ -29,8 +29,7 @@ const io = new Server(httpServer, {
 
 connectDB();
 
-// In-memory list of who's currently connected to each meeting room —
-// used to show the live "Participants" list on the frontend.
+
 const roomUsers = {};
 
 app.use(cors({
@@ -59,6 +58,11 @@ io.on("connection", (socket) => {
   
  socket.on("transcript-line", ({ meetingId, userName, text }) => {
   socket.to(meetingId).emit("transcript-line", { userName, text });
+});
+
+
+socket.on("summary-ready", ({ meetingId, summary }) => {
+  socket.to(meetingId).emit("summary-ready", summary);
 });
 
 socket.on("send-message", ({ meetingId, message, userName }) => {
@@ -90,8 +94,6 @@ socket.on("send-message", ({ meetingId, message, userName }) => {
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
     const { meetingId, peerId, userName } = socket.data;
-    // Let everyone else in the room know this participant left, so their
-    // video tile can be removed instead of staying stuck on screen.
     if (meetingId && peerId) {
       socket.to(meetingId).emit("user-left", { peerId, userName });
     }

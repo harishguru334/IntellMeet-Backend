@@ -1,10 +1,13 @@
 const Task = require("../Models/TaskModels");
 const Meeting = require("../Models/MeetingModels");
 
-// Sabhi tasks lo (user ke)
+// Sabhi tasks lo (agar meetingId diya hai to us meeting ke sabhi participants ke
+// tasks dikhao, warna sirf apne khud ke banaye hue tasks — jaisa Kanban board me hota hai)
 const getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ createdBy: req.user._id }).sort({ createdAt: -1 });
+    const { meetingId } = req.query;
+    const filter = meetingId ? { meetingId } : { createdBy: req.user._id };
+    const tasks = await Task.find(filter).sort({ createdAt: -1 });
     res.json(tasks);
   } catch (err) {
     res.status(500).json({ message: err.message });

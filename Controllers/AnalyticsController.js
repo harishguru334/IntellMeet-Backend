@@ -23,7 +23,7 @@ const getAnalytics = async (req, res) => {
 
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter((t) => t.status === "done").length;
-    const inProgressTasks = tasks.filter((t) => t.status === "in-progress").length; 
+    const inProgressTasks = tasks.filter((t) => t.status === "inprogress").length; 
     const todoTasks = tasks.filter((t) => t.status === "todo").length;
 
     const last7Days = Array.from({ length: 7 }, (_, i) => {
