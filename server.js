@@ -57,15 +57,18 @@ io.on("connection", (socket) => {
     console.log(`${userName} joined meeting ${meetingId}`);
   });
   
-  socket.on("send-message", ({ meetingId, message, userName }) => {
-    // socket.to() excludes the sender — sender already shows their own
-    // message locally, so broadcasting back to them causes duplicates.
-    socket.to(meetingId).emit("receive-message", {
-      message,
-      userName,
-      time: new Date().toLocaleTimeString(),
-    });
+ socket.on("transcript-line", ({ meetingId, userName, text }) => {
+  socket.to(meetingId).emit("transcript-line", { userName, text });
+});
+
+socket.on("send-message", ({ meetingId, message, userName }) => {
+  socket.to(meetingId).emit("receive-message", {
+    message,
+    userName,
+    time: new Date().toLocaleTimeString(),
   });
+});
+
   
   socket.on("webrtc-offer", ({ offer, to }) => {
     socket.to(to).emit("webrtc-offer", { offer, from: socket.id });
