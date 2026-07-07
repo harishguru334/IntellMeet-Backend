@@ -11,7 +11,7 @@ const createMeeting = async (req, res) => {
       meetingCode: uuidv4().slice(0, 8).toUpperCase(),
     });
 
-    // ✅ Cache invalidate karo — new meeting bani
+    // ✅ Cache invalidate — new meeting
     await redis.del(`meetings:${req.user._id}`);
 
     res.status(201).json(meeting);
@@ -21,24 +21,24 @@ const createMeeting = async (req, res) => {
   }
 };
 
-// Get My Meetings — Cache ke saath
+// Get My Meetings Cache 
 const getMyMeetings = async (req, res) => {
   try {
     const cacheKey = `meetings:${req.user._id}`;
 
-    // ✅ Pehle Redis check karo
+    //  Redis check 
     const cached = await redis.get(cacheKey);
     if (cached) {
       console.log("✅ Cache hit — meetings");
       return res.json(JSON.parse(cached));
     }
 
-    // MongoDB se fetch karo
+    // MongoDB fetch
     const meetings = await Meeting.find({
       host: req.user._id,
     }).sort({ createdAt: -1 });
 
-    // ✅ Redis mein save karo — 5 min ke liye
+  
     await redis.set(cacheKey, JSON.stringify(meetings), "EX", 300);
 
     res.status(200).json(meetings);
@@ -48,7 +48,7 @@ const getMyMeetings = async (req, res) => {
 };
 
 
-// Join Meeting by Code — Zoom jaise "Meeting Code" se join
+// Join Meeting by Code
 const getMeetingByCode = async (req, res) => {
   try {
     const code = req.params.code?.trim().toUpperCase();
@@ -77,7 +77,6 @@ const getMeetingById = async (req, res) => {
     const meeting = await Meeting.findById(req.params.id);
     if (!meeting) return res.status(404).json({ message: "Meeting not found" });
 
-    // ✅ Cache karo — 10 min
     await redis.set(cacheKey, JSON.stringify(meeting), "EX", 600);
 
     res.status(200).json(meeting);
@@ -86,7 +85,7 @@ const getMeetingById = async (req, res) => {
   }
 };
 
-// Save Summary — Cache invalidate karo
+// Save Summary — Invalidate Cache 
 const saveMeetingSummary = async (req, res) => {
   try {
     const { summary, keyPoints, actionItems, transcript } = req.body;
@@ -103,7 +102,7 @@ const saveMeetingSummary = async (req, res) => {
 
     if (!meeting) return res.status(404).json({ message: "Meeting not found" });
 
-    // ✅ Cache invalidate karo
+    // Invalidate Cache 
     await redis.del(`meeting:${req.params.id}`);
     await redis.del(`meetings:${req.user._id}`);
 

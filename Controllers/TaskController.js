@@ -1,8 +1,7 @@
 const Task = require("../Models/TaskModels");
 const Meeting = require("../Models/MeetingModels");
 
-// Sabhi tasks lo (agar meetingId diya hai to us meeting ke sabhi participants ke
-// tasks dikhao, warna sirf apne khud ke banaye hue tasks — jaisa Kanban board me hota hai)
+
 const getTasks = async (req, res) => {
   try {
     const { meetingId } = req.query;
@@ -14,7 +13,7 @@ const getTasks = async (req, res) => {
   }
 };
 
-// Task banao
+// Task Creation 
 const createTask = async (req, res) => {
   try {
     const { title, assignee, meetingId } = req.body;
@@ -56,7 +55,7 @@ const deleteTask = async (req, res) => {
   }
 };
 
-// Meeting ke action items se tasks import karo
+//  Import Task from Meeting action items
 const importFromMeeting = async (req, res) => {
   try {
     const meeting = await Meeting.findById(req.params.meetingId);
